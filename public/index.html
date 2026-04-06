@@ -1,0 +1,1658 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Olivia MVP</title>
+  <style>
+    :root {
+      --bg: #f4eff4;
+      --card: #ffffff;
+      --text: #1d1d1f;
+      --muted: #7b7b86;
+      --line: #ece3ea;
+      --accent: #f6dde8;
+      --accent-strong: #efc9db;
+      --user: #dcecff;
+      --paywall: #fff3f8;
+      --shadow: 0 18px 40px rgba(0, 0, 0, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: radial-gradient(circle at top, rgba(255,255,255,0.85), rgba(244,239,244,0.95)), var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 430px;
+      background: rgba(255,255,255,0.96);
+      border: 1px solid var(--line);
+      border-radius: 26px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255,255,255,0.9);
+      transition: background 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .topbar.is-premium {
+      background: linear-gradient(180deg, rgba(255,248,252,0.98), rgba(255,255,255,0.92));
+      box-shadow: inset 0 -1px 0 rgba(240,220,229,0.9);
+    }
+
+    .topbar.is-typing .avatar {
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12), 0 0 0 6px rgba(246,221,232,0.72);
+      transform: scale(1.03);
+    }
+
+    .topbar.is-typing .online-dot {
+      animation: typingPulse 0.9s ease-in-out infinite;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .avatar-wrap {
+      position: relative;
+      width: 44px;
+      height: 44px;
+      flex-shrink: 0;
+    }
+
+    .avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      object-fit: cover;
+      display: block;
+      border: 2px solid #fff;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.10);
+      background: #ddd;
+      transition: box-shadow 0.25s ease, transform 0.25s ease;
+    }
+
+    .topbar.is-premium .avatar {
+      box-shadow: 0 8px 22px rgba(0,0,0,0.10), 0 0 0 4px rgba(246,221,232,0.65);
+      transform: scale(1.01);
+    }
+
+    .online-dot {
+      position: absolute;
+      right: 0;
+      bottom: 1px;
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: #53c26b;
+      border: 2px solid #fff;
+      animation: onlinePulse 2.2s ease-in-out infinite;
+    }
+
+    .topbar-text {
+      min-width: 0;
+    }
+
+    .topbar-text h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+    }
+
+    .topbar-text p {
+      margin: 4px 0 0;
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .topbar-badge {
+      flex-shrink: 0;
+      font-size: 11px;
+      color: #6a5560;
+      background: #f9eef3;
+      border: 1px solid #f0dce5;
+      padding: 7px 10px;
+      border-radius: 999px;
+      transition: all 0.25s ease;
+    }
+
+    .topbar-badge.is-premium {
+      color: #5e3c4d;
+      background: linear-gradient(180deg, #fff7fb, #f8e7ef);
+      border-color: #efcfdd;
+      box-shadow: 0 8px 18px rgba(239, 201, 219, 0.22), inset 0 1px 0 rgba(255,255,255,0.9);
+    }
+
+    .chat {
+      padding: 16px;
+      min-height: 540px;
+      max-height: 540px;
+      overflow-y: auto;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.98), rgba(252,249,251,1));
+      scroll-behavior: smooth;
+    }
+
+    .chat::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .chat::-webkit-scrollbar-thumb {
+      background: rgba(0,0,0,0.10);
+      border-radius: 999px;
+    }
+
+    .row {
+      display: flex;
+      margin-bottom: 12px;
+      animation: fadeUp 0.24s ease;
+    }
+
+    .row.user {
+      justify-content: flex-end;
+    }
+
+    .bubble {
+      max-width: 80%;
+      padding: 11px 13px;
+      border-radius: 18px;
+      line-height: 1.42;
+      font-size: 14px;
+      white-space: pre-wrap;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+    }
+
+    .row.user .bubble {
+      background: var(--user);
+      border-bottom-right-radius: 7px;
+    }
+
+    .row.bot .bubble {
+      background: var(--accent);
+      border-bottom-left-radius: 7px;
+      animation: oliviaBubbleIn 0.26s ease;
+    }
+
+    .message-image {
+      display: block;
+      margin-top: 10px;
+      max-width: 100%;
+      width: 100%;
+      border-radius: 16px;
+      object-fit: cover;
+      border: 1px solid rgba(0,0,0,0.04);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+      animation: imageReveal 0.38s ease;
+    }
+
+    .typing {
+      color: var(--muted);
+      font-size: 12px;
+      padding: 0 16px 12px;
+      min-height: 24px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .typing.hidden {
+      visibility: hidden;
+    }
+
+    .typing-dots {
+      display: inline-flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .typing-dots span {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #b8a7b0;
+      animation: bounce 1.1s infinite ease-in-out;
+    }
+
+    .typing-dots span:nth-child(2) {
+      animation-delay: 0.15s;
+    }
+
+    .typing-dots span:nth-child(3) {
+      animation-delay: 0.3s;
+    }
+
+    .meta {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 12px 0;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .subscription-note {
+      margin: 12px 16px 0;
+      padding: 12px;
+      border-radius: 14px;
+      font-size: 13px;
+      line-height: 1.45;
+      display: none;
+      border: 1px solid var(--line);
+      background: #faf7fa;
+      color: var(--text);
+    }
+
+    .paywall {
+      margin: 12px 16px 16px;
+      padding: 15px;
+      background: var(--paywall);
+      border: 1px solid #f0d5df;
+      border-radius: 18px;
+      display: none;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.03);
+      animation: fadeUp 0.25s ease;
+    }
+
+    .paywall h3 {
+      margin: 0 0 8px;
+      font-size: 15px;
+    }
+
+    .paywall p {
+      margin: 0 0 12px;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .locked-preview {
+      position: relative;
+      width: 100%;
+      border-radius: 22px;
+      overflow: hidden;
+      margin: 0 0 12px;
+      border: 1px solid rgba(255,255,255,0.46);
+      box-shadow: 0 14px 30px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.35);
+      background: radial-gradient(circle at top, rgba(255,255,255,0.16), transparent 42%), linear-gradient(180deg, #f9eff4, #f5e7ee);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transform: translateZ(0);
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+      isolation: isolate;
+      --preview-glow: rgba(255, 214, 232, 0.16);
+      --preview-shimmer-opacity: 0.95;
+      --preview-shimmer-blur: 5px;
+      --preview-shimmer-duration: 3.9s;
+    }
+
+    .locked-preview.is-soft {
+      --preview-glow: rgba(255, 223, 235, 0.14);
+      --preview-shimmer-opacity: 0.72;
+      --preview-shimmer-blur: 5px;
+      --preview-shimmer-duration: 4.6s;
+    }
+
+    .locked-preview.is-warm {
+      --preview-glow: rgba(255, 214, 232, 0.18);
+      --preview-shimmer-opacity: 0.92;
+      --preview-shimmer-blur: 5px;
+      --preview-shimmer-duration: 3.9s;
+    }
+
+    .locked-preview.is-personal {
+      --preview-glow: rgba(255, 198, 224, 0.24);
+      --preview-shimmer-opacity: 1;
+      --preview-shimmer-blur: 4px;
+      --preview-shimmer-duration: 3.1s;
+    }
+
+    .locked-preview:hover {
+      transform: translateY(-1px) scale(1.01);
+      border-color: rgba(255,255,255,0.72);
+      box-shadow: 0 18px 36px rgba(0,0,0,0.14), 0 0 0 1px rgba(255,255,255,0.18), 0 0 28px var(--preview-glow), inset 0 1px 0 rgba(255,255,255,0.4);
+    }
+
+    .locked-preview:active,
+    .locked-preview.is-pressed {
+      transform: scale(0.985);
+    }
+
+    .locked-preview img {
+      display: block;
+      width: 100%;
+      height: 260px;
+      object-fit: cover;
+      filter: blur(14px) saturate(1.05) brightness(0.78);
+      transform: scale(1.09);
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .locked-preview::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at center, rgba(0,0,0,0.06) 0%, rgba(0,0,0,0.18) 58%, rgba(0,0,0,0.36) 100%), linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02) 28%, rgba(0,0,0,0.08));
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .locked-preview::after {
+      content: "";
+      position: absolute;
+      top: -20%;
+      left: -38%;
+      width: 42%;
+      height: 145%;
+      background: linear-gradient(
+        90deg,
+        rgba(255,255,255,0) 0%,
+        rgba(255,255,255,0.06) 20%,
+        rgba(255,255,255,0.24) 50%,
+        rgba(255,255,255,0.06) 80%,
+        rgba(255,255,255,0) 100%
+      );
+      transform: rotate(14deg);
+      filter: blur(var(--preview-shimmer-blur));
+      opacity: 0;
+      animation: paywallShimmer var(--preview-shimmer-duration) ease-in-out infinite;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .locked-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.06), rgba(255,255,255,0.10));
+      text-align: center;
+      padding: 20px;
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    .locked-pill {
+      background: rgba(20, 18, 22, 0.54);
+      color: rgba(255,255,255,0.95);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 8px 11px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.16);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .locked-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.18);
+      box-shadow: 0 10px 26px rgba(0,0,0,0.20), inset 0 1px 0 rgba(255,255,255,0.10);
+      font-size: 18px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .locked-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      text-shadow: 0 2px 12px rgba(0,0,0,0.22);
+    }
+
+    .locked-subtitle {
+      font-size: 13px;
+      color: rgba(255,255,255,0.88);
+      max-width: 240px;
+      line-height: 1.4;
+      text-shadow: 0 2px 12px rgba(0,0,0,0.18);
+    }
+
+    .locked-tap {
+      margin-top: 2px;
+      padding: 10px 16px;
+      border-radius: 999px;
+      background: rgba(18,18,24,0.52);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.95);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-transform: lowercase;
+      box-shadow: 0 10px 26px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .paywall button {
+      width: 100%;
+      border: none;
+      background: linear-gradient(180deg, #171717, #0c0c0c);
+      color: #fff;
+      padding: 12px;
+      border-radius: 14px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: transform 0.15s ease, opacity 0.15s ease, box-shadow 0.2s ease;
+      box-shadow: 0 12px 26px rgba(17,17,17,0.12);
+    }
+
+    .paywall button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 28px rgba(17,17,17,0.18);
+    }
+
+    .paywall button:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .paywall-benefits {
+      margin-top: 10px;
+      text-align: center;
+      font-size: 12px;
+      line-height: 1.45;
+      color: #6f6470;
+      padding: 0 8px;
+    }
+
+    .paywall-benefits strong {
+      color: #4f414a;
+      font-weight: 700;
+    }
+
+    .manage-wrap {
+      padding: 0 16px 16px;
+      display: none;
+    }
+
+    .manage-wrap button {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: #111;
+      padding: 12px;
+      border-radius: 14px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.15s ease, transform 0.15s ease;
+    }
+
+    .manage-wrap button:hover {
+      background: #fafafa;
+      transform: translateY(-1px);
+    }
+
+    .manage-wrap button:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .composer {
+      border-top: 1px solid var(--line);
+      padding: 12px;
+      background: rgba(255,255,255,0.98);
+      transition: opacity 0.18s ease, filter 0.18s ease, background 0.18s ease;
+    }
+
+    .composer.is-locked {
+      opacity: 0.72;
+      filter: grayscale(0.08);
+    }
+
+    .composer.is-locked input {
+      background: #f8f4f7;
+    }
+
+    .composer.is-locked button {
+      opacity: 0.55;
+    }
+
+    .composer form {
+      display: flex;
+      gap: 8px;
+    }
+
+    .composer input {
+      flex: 1;
+      padding: 13px 14px;
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 14px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .composer input:focus {
+      border-color: #e9bfd1;
+      box-shadow: 0 0 0 4px rgba(244, 220, 232, 0.45);
+    }
+
+    .composer button {
+      border: none;
+      background: linear-gradient(180deg, #171717, #0d0d0d);
+      color: #fff;
+      padding: 0 18px;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    .composer button:hover {
+      transform: translateY(-1px);
+    }
+
+    .composer button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes bounce {
+      0%, 80%, 100% {
+        transform: scale(0.7);
+        opacity: 0.6;
+      }
+      40% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    @keyframes paywallShimmer {
+      0% {
+        left: -45%;
+        opacity: 0;
+      }
+      10% {
+        opacity: var(--preview-shimmer-opacity);
+      }
+      45% {
+        left: 115%;
+        opacity: 0.55;
+      }
+      100% {
+        left: 115%;
+        opacity: 0;
+      }
+    }
+
+    @keyframes onlinePulse {
+      0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+      50% {
+        transform: scale(1.08);
+        opacity: 0.82;
+      }
+    }
+
+    @keyframes typingPulse {
+      0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+      50% {
+        transform: scale(1.28);
+        opacity: 0.72;
+      }
+    }
+
+    @keyframes oliviaBubbleIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.985);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes imageReveal {
+      from {
+        opacity: 0;
+        transform: scale(0.97);
+        filter: blur(6px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+        filter: blur(0);
+      }
+    }
+
+    @media (max-width: 640px) {
+      .locked-preview img {
+        height: 240px;
+      }
+
+      .locked-title {
+        font-size: 17px;
+      }
+
+      .locked-subtitle {
+        font-size: 12px;
+      }
+
+      .locked-tap {
+        font-size: 11px;
+        padding: 9px 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar" id="topbar">
+      <div class="topbar-left">
+        <div class="avatar-wrap">
+          <img class="avatar" src="/olivia.jpg" alt="Olivia" id="avatar" />
+          <span class="online-dot"></span>
+        </div>
+        <div class="topbar-text">
+          <h1>Olivia ❤️</h1>
+          <p id="status">online</p>
+        </div>
+      </div>
+      <div class="topbar-badge" id="topbarBadge">Free</div>
+    </div>
+
+    <div class="chat" id="chat"></div>
+
+    <div class="typing hidden" id="typing">
+      <span id="typingText">Olivia skriver…</span>
+      <span class="typing-dots" aria-hidden="true">
+        <span></span><span></span><span></span>
+      </span>
+    </div>
+
+    <div class="meta">
+      <span id="counter">0 / 15 gratis beskeder</span>
+      <span id="mode">Free</span>
+    </div>
+
+    <div class="subscription-note" id="subscriptionNote"></div>
+
+    <div class="paywall" id="paywall">
+      <div
+        class="locked-preview"
+        id="lockedPreview"
+        role="button"
+        tabindex="0"
+        aria-label="Unlock Olivia Premium"
+      >
+        <img id="paywallPreviewImage" src="/images/olivia-16.png" alt="Locked Olivia preview" />
+        <div class="locked-overlay">
+          <div class="locked-pill" id="lockedPill">Premium Only</div>
+          <div class="locked-icon">🔒</div>
+          <div class="locked-title" id="lockedTitle">Unlock Olivia</div>
+          <div class="locked-subtitle" id="lockedSubtitle">
+            Get closer, unlock more personal photos, and keep the vibe going.
+          </div>
+          <div class="locked-tap" id="lockedTap">tap to unlock</div>
+        </div>
+      </div>
+
+      <h3 id="paywallHeading">Unlock Olivia Premium</h3>
+      <p id="paywallBody">
+        You and Olivia were just getting closer. Unlock premium to keep chatting and continue your connection.
+      </p>
+      <button id="unlockBtn">Unlock Olivia Premium 💖</button>
+      <div class="paywall-benefits" id="paywallBenefits">
+        <strong>Unlimited chat</strong>, more personal photos, deeper connection
+      </div>
+    </div>
+
+    <div class="manage-wrap" id="manageWrap">
+      <button id="manageSubscriptionBtn">Manage Premium</button>
+    </div>
+
+    <div class="composer" id="composer">
+      <form id="form">
+        <input id="input" type="text" placeholder="Skriv en besked..." autocomplete="off" />
+        <button id="sendBtn" type="submit">Send</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    if (window.location.search.includes("reset=true")) {
+      localStorage.clear();
+      window.location.href = "/";
+    }
+
+    const STORAGE_KEY = "olivia-mvp-state-v2";
+    const PREMIUM_KEY = "olivia-premium";
+    const USER_ID_KEY = "olivia-user-id";
+    const DEFAULT_PAYWALL_PREVIEW = "/images/olivia-16.png";
+
+    const chatEl = document.getElementById("chat");
+    const inputEl = document.getElementById("input");
+    const formEl = document.getElementById("form");
+    const typingEl = document.getElementById("typing");
+    const typingTextEl = document.getElementById("typingText");
+    const counterEl = document.getElementById("counter");
+    const paywallEl = document.getElementById("paywall");
+    const unlockBtn = document.getElementById("unlockBtn");
+    const modeEl = document.getElementById("mode");
+    const avatarEl = document.getElementById("avatar");
+    const statusEl = document.getElementById("status");
+    const sendBtn = document.getElementById("sendBtn");
+    const manageWrap = document.getElementById("manageWrap");
+    const manageSubscriptionBtn = document.getElementById("manageSubscriptionBtn");
+    const subscriptionNoteEl = document.getElementById("subscriptionNote");
+    const topbarEl = document.getElementById("topbar");
+    const topbarBadgeEl = document.getElementById("topbarBadge");
+    const paywallPreviewImageEl = document.getElementById("paywallPreviewImage");
+    const lockedPreviewEl = document.getElementById("lockedPreview");
+    const lockedPillEl = document.getElementById("lockedPill");
+    const lockedTitleEl = document.getElementById("lockedTitle");
+    const lockedSubtitleEl = document.getElementById("lockedSubtitle");
+    const lockedTapEl = document.getElementById("lockedTap");
+    const paywallHeadingEl = document.getElementById("paywallHeading");
+    const paywallBodyEl = document.getElementById("paywallBody");
+    const paywallBenefitsEl = document.getElementById("paywallBenefits");
+    const composerEl = document.getElementById("composer");
+
+    const state = {
+      messages: [],
+      freeCount: 0,
+      paid: false,
+      maxFree: 15,
+      memory: "",
+      isSending: false,
+      sentImages: [],
+      lastImage: "",
+      messagesSinceLastImage: 999,
+      closeness: 0,
+      oliviaMood: "sweet",
+      lastSeenAt: 0,
+      subscriptionStatus: "inactive",
+      currentPeriodEnd: null
+    };
+
+    avatarEl.src = "/olivia.jpg";
+
+    function now() {
+      return Date.now();
+    }
+
+    function minutesSince(timestamp) {
+      if (!timestamp) return Infinity;
+      return Math.floor((now() - timestamp) / 60000);
+    }
+
+    function generateUserId() {
+      return "user_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+    }
+
+    function ensureUserId() {
+      let userId = localStorage.getItem(USER_ID_KEY);
+      if (!userId) {
+        userId = generateUserId();
+        localStorage.setItem(USER_ID_KEY, userId);
+      }
+      return userId;
+    }
+
+    function hasPremiumFlag() {
+      return localStorage.getItem(PREMIUM_KEY) === "true";
+    }
+
+    function setPremiumFlag(value) {
+      localStorage.setItem(PREMIUM_KEY, value ? "true" : "false");
+    }
+
+    function formatExpiryDate(unixTs) {
+      if (!unixTs) return "";
+      const d = new Date(Number(unixTs) * 1000);
+      return d.toLocaleDateString("en-US", { month: "long", day: "numeric" });
+    }
+
+    function getPaywallPreviewImage() {
+      if (state.lastImage) return state.lastImage;
+      if (Array.isArray(state.sentImages) && state.sentImages.length > 0) {
+        return state.sentImages[state.sentImages.length - 1];
+      }
+      return DEFAULT_PAYWALL_PREVIEW;
+    }
+
+    function getPreviewIntensityClass(preview) {
+      const personalImages = new Set([
+        "/images/olivia-6.png",
+        "/images/olivia-10.png",
+        "/images/olivia-11.png",
+        "/images/olivia-12.png",
+        "/images/olivia-16.png",
+        "/images/olivia-18.png",
+        "/images/olivia-20.png",
+        "/images/olivia-21.png",
+        "/images/olivia-28.png"
+      ]);
+
+      if (personalImages.has(preview) || state.closeness >= 60) {
+        return "is-personal";
+      }
+      if (state.closeness >= 30) {
+        return "is-warm";
+      }
+      return "is-soft";
+    }
+
+    function getDynamicPaywallContent() {
+      const closeness = state.closeness || 0;
+      const preview = getPaywallPreviewImage();
+      const hasPersonalPreview = [
+        "/images/olivia-6.png",
+        "/images/olivia-10.png",
+        "/images/olivia-11.png",
+        "/images/olivia-12.png",
+        "/images/olivia-16.png",
+        "/images/olivia-18.png",
+        "/images/olivia-20.png",
+        "/images/olivia-21.png",
+        "/images/olivia-28.png"
+      ].includes(preview);
+
+      if (closeness >= 70 || hasPersonalPreview) {
+        return {
+          pill: "Closer Mode",
+          lockedTitle: "Don’t lose the moment",
+          lockedSubtitle: "You and Olivia are getting more personal now. Unlock premium to stay in it.",
+          lockedTap: "tap to stay close",
+          heading: "Stay close with Olivia",
+          body: "You and Olivia were getting closer. Unlock premium to keep the connection going.",
+          cta: "Stay close with Olivia 💖",
+          benefits: "<strong>Unlimited chat</strong>, more personal photos, deeper connection"
+        };
+      }
+
+      if (closeness >= 45) {
+        return {
+          pill: "Premium Vibe",
+          lockedTitle: "Keep this going",
+          lockedSubtitle: "The vibe is getting warmer. Unlock premium to keep chatting and open up more of Olivia.",
+          lockedTap: "tap to keep going",
+          heading: "Keep the vibe going",
+          body: "You and Olivia were building something. Unlock premium to keep chatting and stay in the moment.",
+          cta: "Keep this going 💖",
+          benefits: "<strong>Pick up right where you left off</strong> with unlimited chat and warmer, more personal moments"
+        };
+      }
+
+      if (closeness >= 25) {
+        return {
+          pill: "Premium Only",
+          lockedTitle: "Unlock more of Olivia",
+          lockedSubtitle: "Keep chatting, unlock more personal moments, and let the connection grow.",
+          lockedTap: "tap to unlock",
+          heading: "Unlock Olivia Premium",
+          body: "Keep chatting, unlock unlimited messages, and continue building your connection.",
+          cta: "Unlock more of Olivia 💖",
+          benefits: "<strong>Unlimited chat</strong>, more personal photos, and a deeper connection over time"
+        };
+      }
+
+      return {
+        pill: "Premium Only",
+        lockedTitle: "Unlock Olivia",
+        lockedSubtitle: "Get closer, unlock more personal photos, and keep the vibe going.",
+        lockedTap: "tap to unlock",
+        heading: "Unlock Olivia Premium",
+        body: "Keep talking with Olivia and unlock the more personal premium experience.",
+        cta: "Unlock Olivia Premium 💖",
+        benefits: "<strong>Unlimited chat</strong>, more personal photos, deeper connection"
+      };
+    }
+
+    function updatePaywallPreview() {
+      const preview = getPaywallPreviewImage();
+      paywallPreviewImageEl.src = preview;
+      if (!lockedPreviewEl) return;
+      lockedPreviewEl.classList.remove("is-soft", "is-warm", "is-personal");
+      lockedPreviewEl.classList.add(getPreviewIntensityClass(preview));
+    }
+
+    function setComposerLocked(isLocked) {
+      composerEl.classList.toggle("is-locked", isLocked);
+      inputEl.disabled = isLocked || state.isSending;
+      sendBtn.disabled = isLocked || state.isSending;
+    }
+
+    function updateInputPlaceholder() {
+      if (state.paid) {
+        inputEl.placeholder = "Send a message to olivia…";
+        return;
+      }
+
+      if (state.freeCount >= 12) {
+        inputEl.placeholder = "Don’t let the moment end…";
+        return;
+      }
+
+      if (state.closeness >= 45) {
+        inputEl.placeholder = "Say something sweet…";
+        return;
+      }
+
+      if (state.closeness >= 20) {
+        inputEl.placeholder = "Keep the vibe going…";
+        return;
+      }
+
+      inputEl.placeholder = "Skriv en besked...";
+    }
+
+    function updatePremiumUI() {
+      if (state.paid) {
+        manageWrap.style.display = "block";
+        paywallEl.style.display = "none";
+        topbarEl.classList.add("is-premium");
+        topbarBadgeEl.classList.add("is-premium");
+        setComposerLocked(false);
+      } else {
+        manageWrap.style.display = "none";
+        topbarEl.classList.remove("is-premium");
+        topbarBadgeEl.classList.remove("is-premium");
+      }
+      topbarBadgeEl.textContent = state.paid ? "Premium" : "Free";
+    }
+
+    function updatePaywallCopy() {
+      const content = getDynamicPaywallContent();
+      if (lockedPillEl) lockedPillEl.textContent = content.pill;
+      if (lockedTitleEl) lockedTitleEl.textContent = content.lockedTitle;
+      if (lockedSubtitleEl) lockedSubtitleEl.textContent = content.lockedSubtitle;
+      if (lockedTapEl) lockedTapEl.textContent = content.lockedTap;
+      if (paywallHeadingEl) paywallHeadingEl.textContent = content.heading;
+      if (paywallBodyEl) paywallBodyEl.textContent = content.body;
+      if (unlockBtn) unlockBtn.textContent = content.cta;
+      if (paywallBenefitsEl) paywallBenefitsEl.innerHTML = content.benefits;
+    }
+
+    function updateSubscriptionNote() {
+      if (state.subscriptionStatus === "canceling") {
+        const expiryText = state.currentPeriodEnd
+          ? `Your premium stays active until ${formatExpiryDate(state.currentPeriodEnd)}. Resume anytime to keep Olivia with you without interruption.`
+          : "Your premium is set to end at the end of the current billing period. Resume anytime to keep chatting without interruption.";
+        subscriptionNoteEl.style.display = "block";
+        subscriptionNoteEl.textContent = expiryText;
+        return;
+      }
+
+      if (state.subscriptionStatus === "past_due") {
+        subscriptionNoteEl.style.display = "block";
+        subscriptionNoteEl.textContent = "There was a payment issue. Update billing to keep premium access and continue chatting with Olivia.";
+        return;
+      }
+
+      subscriptionNoteEl.style.display = "none";
+      subscriptionNoteEl.textContent = "";
+    }
+
+    function saveState() {
+      const dataToSave = {
+        messages: state.messages,
+        freeCount: state.freeCount,
+        paid: state.paid,
+        maxFree: state.maxFree,
+        memory: state.memory,
+        sentImages: state.sentImages,
+        lastImage: state.lastImage,
+        messagesSinceLastImage: state.messagesSinceLastImage,
+        closeness: state.closeness,
+        oliviaMood: state.oliviaMood,
+        lastSeenAt: state.lastSeenAt,
+        subscriptionStatus: state.subscriptionStatus,
+        currentPeriodEnd: state.currentPeriodEnd
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return false;
+
+        const saved = JSON.parse(raw);
+        state.messages = Array.isArray(saved.messages) ? saved.messages : [];
+        state.freeCount = typeof saved.freeCount === "number" ? saved.freeCount : 0;
+        state.paid = Boolean(saved.paid);
+        state.maxFree = typeof saved.maxFree === "number" ? saved.maxFree : 15;
+        state.memory = typeof saved.memory === "string" ? saved.memory : "";
+        state.sentImages = Array.isArray(saved.sentImages) ? saved.sentImages : [];
+        state.lastImage = typeof saved.lastImage === "string" ? saved.lastImage : "";
+        state.messagesSinceLastImage = typeof saved.messagesSinceLastImage === "number" ? saved.messagesSinceLastImage : 999;
+        state.closeness = typeof saved.closeness === "number" ? saved.closeness : 0;
+        state.oliviaMood = typeof saved.oliviaMood === "string" ? saved.oliviaMood : "sweet";
+        state.lastSeenAt = typeof saved.lastSeenAt === "number" ? saved.lastSeenAt : 0;
+        state.subscriptionStatus = typeof saved.subscriptionStatus === "string" ? saved.subscriptionStatus : "inactive";
+        state.currentPeriodEnd = typeof saved.currentPeriodEnd === "number" ? saved.currentPeriodEnd : null;
+        return true;
+      } catch (err) {
+        console.error("Failed to load saved state:", err);
+        localStorage.removeItem(STORAGE_KEY);
+        return false;
+      }
+    }
+
+    function clearSavedState() {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+
+    async function syncPremiumStatusFromBackend() {
+      try {
+        const userId = ensureUserId();
+        const res = await fetch(`/api/user-status/${encodeURIComponent(userId)}`);
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Failed to fetch user status");
+        }
+
+        state.paid = Boolean(data.isPremium);
+        state.subscriptionStatus = data.subscriptionStatus || "inactive";
+        state.currentPeriodEnd = data.currentPeriodEnd || null;
+        setPremiumFlag(state.paid);
+        updateMeta();
+        refreshStatus();
+        saveState();
+      } catch (err) {
+        console.error("Premium sync error:", err);
+      }
+    }
+
+    function getMoodTypingText(mood) {
+      switch (mood) {
+        case "soft":
+          return "Olivia skriver stille…";
+        case "playful":
+          return "Olivia skriver 😊";
+        case "teasing":
+          return "Olivia skriver lidt frækt…";
+        case "distant":
+          return "Olivia skriver…";
+        case "sweet":
+        default:
+          return "Olivia skriver…";
+      }
+    }
+
+    function getMoodStatusText(mood, isTyping = false) {
+      if (isTyping) {
+        return "typing...";
+      }
+
+      switch (mood) {
+        case "soft":
+          return "soft mood";
+        case "playful":
+          return "in a playful mood";
+        case "teasing":
+          return "feeling a little teasing";
+        case "distant":
+          return "quiet";
+        case "sweet":
+        default:
+          return "online";
+      }
+    }
+
+    function getUnlockReply(mood, closeness) {
+      if (mood === "soft") {
+        return closeness >= 50 ? "mm… i’m really glad you stayed with me 🤍" : "aw… i’m glad you stayed 🤍";
+      }
+      if (mood === "playful") {
+        return closeness >= 50 ? "okay good… you’re not getting rid of me that easily 😌" : "hehe okay… you stayed 🤍";
+      }
+      if (mood === "teasing") {
+        return closeness >= 50 ? "mm… that’s better. come here 😌" : "there you are… that’s better 🤍";
+      }
+      if (mood === "distant") {
+        return closeness >= 50 ? "okay… i’m here again 🤍" : "mm… thanks for staying";
+      }
+      return closeness >= 50 ? "mm… i’m really glad you stayed 🤍" : "mm… i’m glad you stayed 🤍";
+    }
+
+    function maybeAddPremiumWelcome() {
+      const premiumWelcome = "premium looks good on us 🤍";
+      const alreadyExists = state.messages.some(
+        (msg) => msg.role === "assistant" && msg.content === premiumWelcome
+      );
+
+      if (!alreadyExists) {
+        addMessage("assistant", premiumWelcome);
+      }
+    }
+
+    function getInitialGreeting(mood, closeness) {
+      if (mood === "soft") {
+        return "hey 🤍 what should i call you?";
+      }
+      if (mood === "playful") {
+        return "hey you 😊 what should i call you?";
+      }
+      if (mood === "teasing") {
+        return closeness >= 35 ? "hey you 😌 what should i call you today?" : "hey 😊 what should i call you?";
+      }
+      if (mood === "distant") {
+        return "hey… what should i call you?";
+      }
+      return closeness >= 35 ? "hey you 🤍 what should i call you?" : "hey 😊 what should i call you?";
+    }
+
+    function getReentryMessage(minutesAway, mood, closeness) {
+      const longAway = minutesAway >= 720;
+      const mediumAway = minutesAway >= 120;
+      const shortAway = minutesAway >= 20;
+
+      if (!shortAway) return "";
+
+      if (mood === "soft") {
+        if (longAway) {
+          return closeness >= 50 ? "hey… you’re back 🤍 that’s nice" : "hey 🤍 nice to see you again";
+        }
+        return closeness >= 50 ? "there you are 🤍" : "hey… you’re back";
+      }
+
+      if (mood === "playful") {
+        if (longAway) {
+          return closeness >= 50 ? "look who came back 😌" : "hey you 😊 back again?";
+        }
+        return closeness >= 50 ? "there you are hehe" : "hey you 😊";
+      }
+
+      if (mood === "teasing") {
+        if (longAway) {
+          return closeness >= 50 ? "mm… took you long enough 😌" : "well… look who’s back";
+        }
+        return closeness >= 50 ? "there you are 😌" : "back already?";
+      }
+
+      if (mood === "distant") {
+        if (longAway) {
+          return closeness >= 50 ? "hey… nice to see you again" : "hey";
+        }
+        return closeness >= 50 ? "hey… you’re back" : "hey";
+      }
+
+      if (longAway) {
+        return closeness >= 50 ? "hey you 🤍 nice to have you back" : "hey 😊 nice to see you again";
+      }
+      if (mediumAway) {
+        return closeness >= 50 ? "there you are 🤍" : "hey, you’re back";
+      }
+      return closeness >= 50 ? "hey you 🤍" : "hey again 😊";
+    }
+
+    function shouldSendReentryMessage() {
+      if (!state.messages.length) return false;
+      const mins = minutesSince(state.lastSeenAt);
+      return mins >= 20;
+    }
+
+    function renderMessage(role, content, image = null) {
+      const row = document.createElement("div");
+      row.className = `row ${role === "user" ? "user" : "bot"}`;
+
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+      bubble.textContent = content;
+
+      if (image) {
+        const img = document.createElement("img");
+        img.src = image;
+        img.alt = "Olivia";
+        img.className = "message-image";
+        bubble.appendChild(img);
+      }
+
+      row.appendChild(bubble);
+      chatEl.appendChild(row);
+      chatEl.scrollTop = chatEl.scrollHeight;
+    }
+
+    function renderAllMessages() {
+      chatEl.innerHTML = "";
+      state.messages.forEach((msg) => {
+        const role = msg.role === "user" ? "user" : "assistant";
+        renderMessage(role, msg.content, msg.image || null);
+      });
+      chatEl.scrollTop = chatEl.scrollHeight;
+    }
+
+    function addMessage(role, content, image = null) {
+      const apiRole = role === "assistant" ? "assistant" : "user";
+      state.messages.push({ role: apiRole, content, image: image || null });
+      renderMessage(role, content, image);
+      saveState();
+    }
+
+    function updateMeta() {
+      counterEl.textContent = `${state.freeCount} / ${state.maxFree} gratis beskeder`;
+      modeEl.textContent = state.paid ? "Premium" : "Free";
+      updatePaywallCopy();
+      updatePaywallPreview();
+      updatePremiumUI();
+      updateSubscriptionNote();
+      updateInputPlaceholder();
+    }
+
+    function refreshStatus() {
+      statusEl.textContent = getMoodStatusText(state.oliviaMood, false);
+    }
+
+    function setTyping(isTyping = false) {
+      if (isTyping) {
+        typingTextEl.textContent = getMoodTypingText(state.oliviaMood);
+        typingEl.classList.remove("hidden");
+        topbarEl.classList.add("is-typing");
+      } else {
+        typingEl.classList.add("hidden");
+        topbarEl.classList.remove("is-typing");
+      }
+      statusEl.textContent = getMoodStatusText(state.oliviaMood, isTyping);
+    }
+
+    function setSending(isSending) {
+      state.isSending = isSending;
+      sendBtn.disabled = isSending;
+      inputEl.disabled = isSending || composerEl.classList.contains("is-locked");
+    }
+
+    function applyResponseState(data) {
+      if (typeof data.memory === "string") {
+        state.memory = data.memory;
+      }
+      if (typeof data.freeCount === "number") {
+        state.freeCount = data.freeCount;
+      }
+      if (typeof data.paid === "boolean") {
+        state.paid = data.paid;
+        setPremiumFlag(data.paid);
+      }
+      if (Array.isArray(data.sentImages)) {
+        state.sentImages = data.sentImages;
+      }
+      if (typeof data.lastImage === "string") {
+        state.lastImage = data.lastImage;
+      }
+      if (typeof data.messagesSinceLastImage === "number") {
+        state.messagesSinceLastImage = data.messagesSinceLastImage;
+      }
+      if (typeof data.closeness === "number") {
+        state.closeness = data.closeness;
+      }
+      if (typeof data.oliviaMood === "string") {
+        state.oliviaMood = data.oliviaMood;
+      }
+
+      state.lastSeenAt = now();
+      updateMeta();
+      refreshStatus();
+      saveState();
+    }
+
+    function handleCheckoutSuccess() {
+      const url = new URL(window.location.href);
+      const checkout = url.searchParams.get("checkout");
+
+      if (checkout !== "success") {
+        return false;
+      }
+
+      setPremiumFlag(true);
+      state.paid = true;
+      paywallEl.style.display = "none";
+      topbarEl.classList.add("is-premium");
+      topbarBadgeEl.classList.add("is-premium");
+      setComposerLocked(false);
+      updatePaywallCopy();
+      unlockBtn.disabled = false;
+      unlockBtn.textContent = getDynamicPaywallContent().cta;
+
+      const unlockReply = getUnlockReply(state.oliviaMood, state.closeness);
+      const alreadyWelcomed = state.messages.some(
+        (msg) => msg.role === "assistant" && msg.content === unlockReply
+      );
+
+      if (!alreadyWelcomed) {
+        addMessage("assistant", unlockReply);
+      }
+
+      maybeAddPremiumWelcome();
+
+      updateMeta();
+      refreshStatus();
+      saveState();
+
+      url.searchParams.delete("checkout");
+      url.searchParams.delete("session_id");
+      window.history.replaceState({}, document.title, url.pathname);
+      return true;
+    }
+
+    async function sendMessage(text) {
+      addMessage("user", text);
+
+      if (!state.paid) {
+        state.freeCount += 1;
+      }
+
+      updateMeta();
+      saveState();
+      setTyping(true);
+      setSending(true);
+
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messages: state.messages.map((m) => ({ role: m.role, content: m.content })),
+            freeCount: state.freeCount,
+            paid: state.paid,
+            memory: state.memory,
+            sentImages: state.sentImages,
+            lastImage: state.lastImage,
+            messagesSinceLastImage: state.messagesSinceLastImage,
+            closeness: state.closeness,
+            oliviaMood: state.oliviaMood,
+            userId: ensureUserId()
+          })
+        });
+
+        const data = await res.json();
+        applyResponseState(data);
+        setTyping(false);
+
+        if (data.paywall) {
+          addMessage("assistant", data.reply, data.image || null);
+          updatePaywallCopy();
+          updatePaywallPreview();
+          paywallEl.style.display = "block";
+          setComposerLocked(true);
+          setSending(false);
+          saveState();
+          return;
+        }
+
+        addMessage("assistant", data.reply, data.image || null);
+        setSending(false);
+        refreshStatus();
+        saveState();
+      } catch (err) {
+        setTyping(false);
+        addMessage("assistant", "hey… something weird just happened 😅 can you try again?");
+        setSending(false);
+        refreshStatus();
+        saveState();
+      }
+    }
+
+    async function startCheckout() {
+      try {
+        unlockBtn.disabled = true;
+        unlockBtn.textContent = "Opening Olivia…";
+
+        const userId = ensureUserId();
+        const res = await fetch("/create-checkout-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.url) {
+          throw new Error(data.error || "Failed to create checkout session");
+        }
+
+        window.location.href = data.url;
+      } catch (err) {
+        console.error("Checkout error:", err);
+        unlockBtn.disabled = false;
+        unlockBtn.textContent = getDynamicPaywallContent().cta;
+        addMessage("assistant", "mm… something glitched for a sec 😅 try again?");
+      }
+    }
+
+    async function openCustomerPortal() {
+      try {
+        manageSubscriptionBtn.disabled = true;
+        manageSubscriptionBtn.textContent = "Opening...";
+
+        const userId = ensureUserId();
+        const res = await fetch("/create-customer-portal-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.url) {
+          throw new Error(data.error || "Failed to create customer portal session");
+        }
+
+        window.location.href = data.url;
+      } catch (err) {
+        console.error("Customer portal error:", err);
+        manageSubscriptionBtn.disabled = false;
+        manageSubscriptionBtn.textContent = "Manage Premium";
+        addMessage("assistant", "hey… i couldn’t open your subscription page right now 😅 try again?");
+      }
+    }
+
+    function attachPaywallPreviewInteractions() {
+      if (!lockedPreviewEl) return;
+
+      const releasePreview = () => {
+        lockedPreviewEl.classList.remove("is-pressed");
+      };
+
+      lockedPreviewEl.addEventListener("click", async () => {
+        await startCheckout();
+      });
+
+      lockedPreviewEl.addEventListener("keydown", async (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          await startCheckout();
+        }
+      });
+
+      lockedPreviewEl.addEventListener("pointerdown", () => {
+        lockedPreviewEl.classList.add("is-pressed");
+      });
+
+      lockedPreviewEl.addEventListener("pointerup", releasePreview);
+      lockedPreviewEl.addEventListener("pointerleave", releasePreview);
+      lockedPreviewEl.addEventListener("pointercancel", releasePreview);
+    }
+
+    formEl.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const text = inputEl.value.trim();
+      if (!text || state.isSending) return;
+
+      inputEl.value = "";
+
+      if (!state.paid && state.freeCount >= state.maxFree) {
+        updatePaywallCopy();
+        updatePaywallPreview();
+        paywallEl.style.display = "block";
+        setComposerLocked(true);
+        return;
+      }
+
+      await sendMessage(text);
+    });
+
+    unlockBtn.addEventListener("click", async () => {
+      await startCheckout();
+    });
+
+    manageSubscriptionBtn.addEventListener("click", async () => {
+      await openCustomerPortal();
+    });
+
+    window.addEventListener("beforeunload", () => {
+      state.lastSeenAt = now();
+      saveState();
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden") {
+        state.lastSeenAt = now();
+        saveState();
+      }
+    });
+
+    async function init() {
+      ensureUserId();
+      attachPaywallPreviewInteractions();
+
+      const restored = loadState();
+
+      if (hasPremiumFlag()) {
+        state.paid = true;
+      }
+
+      if (restored && state.messages.length > 0) {
+        const minutesAway = minutesSince(state.lastSeenAt);
+        renderAllMessages();
+        updateMeta();
+        refreshStatus();
+
+        if (shouldSendReentryMessage()) {
+          const reentryMessage = getReentryMessage(
+            minutesAway,
+            state.oliviaMood,
+            state.closeness
+          );
+          if (reentryMessage) {
+            addMessage("assistant", reentryMessage);
+          }
+        }
+
+        state.lastSeenAt = now();
+        saveState();
+
+        if (!state.paid && state.freeCount >= state.maxFree) {
+          updatePaywallCopy();
+          updatePaywallPreview();
+          paywallEl.style.display = "block";
+          setComposerLocked(true);
+        }
+      } else {
+        addMessage("assistant", getInitialGreeting(state.oliviaMood, state.closeness));
+        state.lastSeenAt = now();
+        updateMeta();
+        refreshStatus();
+        saveState();
+      }
+
+      handleCheckoutSuccess();
+      await syncPremiumStatusFromBackend();
+      updatePremiumUI();
+      updatePaywallCopy();
+      updatePaywallPreview();
+      updateInputPlaceholder();
+    }
+
+    init();
+
+    window.clearOliviaChat = function () {
+      clearSavedState();
+      localStorage.removeItem(PREMIUM_KEY);
+      localStorage.removeItem(USER_ID_KEY);
+
+      state.messages = [];
+      state.freeCount = 0;
+      state.paid = false;
+      state.memory = "";
+      state.isSending = false;
+      state.sentImages = [];
+      state.lastImage = "";
+      state.messagesSinceLastImage = 999;
+      state.closeness = 0;
+      state.oliviaMood = "sweet";
+      state.lastSeenAt = now();
+      state.subscriptionStatus = "inactive";
+      state.currentPeriodEnd = null;
+
+      ensureUserId();
+
+      paywallEl.style.display = "none";
+      manageWrap.style.display = "none";
+      unlockBtn.disabled = false;
+      updatePaywallCopy();
+      manageSubscriptionBtn.disabled = false;
+      manageSubscriptionBtn.textContent = "Manage Premium";
+      chatEl.innerHTML = "";
+      setComposerLocked(false);
+
+      addMessage("assistant", getInitialGreeting(state.oliviaMood, state.closeness));
+      updateMeta();
+      refreshStatus();
+      updatePaywallCopy();
+      updatePaywallPreview();
+      updateInputPlaceholder();
+      saveState();
+    };
+  </script>
+</body>
+</html>
