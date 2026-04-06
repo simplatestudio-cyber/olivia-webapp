@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="da">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Olivia MVP</title>
+  <title>Olivia</title>
   <style>
     :root {
       --bg: #f4eff4;
@@ -712,14 +712,14 @@
     <div class="chat" id="chat"></div>
 
     <div class="typing hidden" id="typing">
-      <span id="typingText">Olivia skriver…</span>
+      <span id="typingText">Olivia is typing…</span>
       <span class="typing-dots" aria-hidden="true">
         <span></span><span></span><span></span>
       </span>
     </div>
 
     <div class="meta">
-      <span id="counter">0 / 15 gratis beskeder</span>
+      <span id="counter">0 / 15 free messages</span>
       <span id="mode">Free</span>
     </div>
 
@@ -733,7 +733,7 @@
         tabindex="0"
         aria-label="Unlock Olivia Premium"
       >
-        <img id="paywallPreviewImage" src="/images/olivia-16.png" alt="Locked Olivia preview" />
+        <img id="paywallPreviewImage" src="/Images/olivia-16.png" alt="Locked Olivia preview" />
         <div class="locked-overlay">
           <div class="locked-pill" id="lockedPill">Premium Only</div>
           <div class="locked-icon">🔒</div>
@@ -761,7 +761,7 @@
 
     <div class="composer" id="composer">
       <form id="form">
-        <input id="input" type="text" placeholder="Skriv en besked..." autocomplete="off" />
+        <input id="input" type="text" placeholder="Type a message..." autocomplete="off" />
         <button id="sendBtn" type="submit">Send</button>
       </form>
     </div>
@@ -776,7 +776,7 @@
     const STORAGE_KEY = "olivia-mvp-state-v2";
     const PREMIUM_KEY = "olivia-premium";
     const USER_ID_KEY = "olivia-user-id";
-    const DEFAULT_PAYWALL_PREVIEW = "/images/olivia-16.png";
+    const DEFAULT_PAYWALL_PREVIEW = "/Images/olivia-16.png";
 
     const chatEl = document.getElementById("chat");
     const inputEl = document.getElementById("input");
@@ -871,15 +871,15 @@
 
     function getPreviewIntensityClass(preview) {
       const personalImages = new Set([
-        "/images/olivia-6.png",
-        "/images/olivia-10.png",
-        "/images/olivia-11.png",
-        "/images/olivia-12.png",
-        "/images/olivia-16.png",
-        "/images/olivia-18.png",
-        "/images/olivia-20.png",
-        "/images/olivia-21.png",
-        "/images/olivia-28.png"
+        "/Images/olivia-6.png",
+        "/Images/olivia-10.png",
+        "/Images/olivia-11.png",
+        "/Images/olivia-12.png",
+        "/Images/olivia-16.png",
+        "/Images/olivia-18.png",
+        "/Images/olivia-20.png",
+        "/Images/olivia-21.png",
+        "/Images/olivia-28.png"
       ]);
 
       if (personalImages.has(preview) || state.closeness >= 60) {
@@ -895,15 +895,15 @@
       const closeness = state.closeness || 0;
       const preview = getPaywallPreviewImage();
       const hasPersonalPreview = [
-        "/images/olivia-6.png",
-        "/images/olivia-10.png",
-        "/images/olivia-11.png",
-        "/images/olivia-12.png",
-        "/images/olivia-16.png",
-        "/images/olivia-18.png",
-        "/images/olivia-20.png",
-        "/images/olivia-21.png",
-        "/images/olivia-28.png"
+        "/Images/olivia-6.png",
+        "/Images/olivia-10.png",
+        "/Images/olivia-11.png",
+        "/Images/olivia-12.png",
+        "/Images/olivia-16.png",
+        "/Images/olivia-18.png",
+        "/Images/olivia-20.png",
+        "/Images/olivia-21.png",
+        "/Images/olivia-28.png"
       ].includes(preview);
 
       if (closeness >= 70 || hasPersonalPreview) {
@@ -973,7 +973,7 @@
 
     function updateInputPlaceholder() {
       if (state.paid) {
-        inputEl.placeholder = "Send a message to olivia…";
+        inputEl.placeholder = "Send a message to Olivia…";
         return;
       }
 
@@ -992,7 +992,7 @@
         return;
       }
 
-      inputEl.placeholder = "Skriv en besked...";
+      inputEl.placeholder = "Type a message...";
     }
 
     function updatePremiumUI() {
@@ -1117,16 +1117,16 @@
     function getMoodTypingText(mood) {
       switch (mood) {
         case "soft":
-          return "Olivia skriver stille…";
+          return "Olivia is typing softly…";
         case "playful":
-          return "Olivia skriver 😊";
+          return "Olivia is typing 😊";
         case "teasing":
-          return "Olivia skriver lidt frækt…";
+          return "Olivia is typing playfully…";
         case "distant":
-          return "Olivia skriver…";
+          return "Olivia is typing…";
         case "sweet":
         default:
-          return "Olivia skriver…";
+          return "Olivia is typing…";
       }
     }
 
@@ -1281,7 +1281,7 @@
     }
 
     function updateMeta() {
-      counterEl.textContent = `${state.freeCount} / ${state.maxFree} gratis beskeder`;
+      counterEl.textContent = `${state.freeCount} / ${state.maxFree} free messages`;
       modeEl.textContent = state.paid ? "Premium" : "Free";
       updatePaywallCopy();
       updatePaywallPreview();
