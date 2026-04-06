@@ -10,6 +10,9 @@ const app = express();
 const port = process.env.PORT || 3000;
 const BASE_URL = process.env.BASE_URL || `http://localhost:${port}`;
 
+// 👇 ADMIN USER (DIG)
+const ADMIN_USER_ID = "user_20zvphfxp5xmnn1ehtu";
+
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -1951,6 +1954,17 @@ app.post("/create-checkout-session", async (req, res) => {
 app.get("/api/user-status/:userId", (req, res) => {
   try {
     const { userId } = req.params;
+
+    if (userId === ADMIN_USER_ID) {
+      return res.json({
+        userId,
+        isPremium: true,
+        subscriptionStatus: "active",
+        currentPeriodEnd: null,
+        plan: "monthly"
+      });
+    }
+
     const user = getUserByUserId(userId);
 
     if (!user) {
