@@ -733,7 +733,7 @@
         tabindex="0"
         aria-label="Unlock Olivia Premium"
       >
-        <img id="paywallPreviewImage" src="/Images/olivia-16.png" alt="Locked Olivia preview" />
+        <img id="paywallPreviewImage" src="/images/olivia-16.png" alt="Locked Olivia preview" />
         <div class="locked-overlay">
           <div class="locked-pill" id="lockedPill">Premium Only</div>
           <div class="locked-icon">🔒</div>
@@ -776,7 +776,7 @@
     const STORAGE_KEY = "olivia-mvp-state-v2";
     const PREMIUM_KEY = "olivia-premium";
     const USER_ID_KEY = "olivia-user-id";
-    const DEFAULT_PAYWALL_PREVIEW = "/Images/olivia-16.png";
+    const DEFAULT_PAYWALL_PREVIEW = "/images/olivia-16.png";
 
     const chatEl = document.getElementById("chat");
     const inputEl = document.getElementById("input");
@@ -871,15 +871,15 @@
 
     function getPreviewIntensityClass(preview) {
       const personalImages = new Set([
-        "/Images/olivia-6.png",
-        "/Images/olivia-10.png",
-        "/Images/olivia-11.png",
-        "/Images/olivia-12.png",
-        "/Images/olivia-16.png",
-        "/Images/olivia-18.png",
-        "/Images/olivia-20.png",
-        "/Images/olivia-21.png",
-        "/Images/olivia-28.png"
+        "/iages/olivia-6.png",
+        "/iages/olivia-10.png",
+        "/iages/olivia-11.png",
+        "/iages/olivia-12.png",
+        "/iages/olivia-16.png",
+        "/iages/olivia-18.png",
+        "/iages/olivia-20.png",
+        "/iages/olivia-21.png",
+        "/iages/olivia-28.png"
       ]);
 
       if (personalImages.has(preview) || state.closeness >= 60) {
@@ -895,15 +895,15 @@
       const closeness = state.closeness || 0;
       const preview = getPaywallPreviewImage();
       const hasPersonalPreview = [
-        "/Images/olivia-6.png",
-        "/Images/olivia-10.png",
-        "/Images/olivia-11.png",
-        "/Images/olivia-12.png",
-        "/Images/olivia-16.png",
-        "/Images/olivia-18.png",
-        "/Images/olivia-20.png",
-        "/Images/olivia-21.png",
-        "/Images/olivia-28.png"
+        "/iages/olivia-6.png",
+        "/iages/olivia-10.png",
+        "/iages/olivia-11.png",
+        "/iages/olivia-12.png",
+        "/iages/olivia-16.png",
+        "/iages/olivia-18.png",
+        "/iages/olivia-20.png",
+        "/iages/olivia-21.png",
+        "/iages/olivia-28.png"
       ].includes(preview);
 
       if (closeness >= 70 || hasPersonalPreview) {
