@@ -50,6 +50,7 @@ try {
 const insertUserStmt = db.prepare(`
   INSERT INTO users (
     userId,
+    email,
     isPremium,
     stripeCustomerId,
     stripeSubscriptionId,
@@ -60,6 +61,7 @@ const insertUserStmt = db.prepare(`
   )
   VALUES (
     @userId,
+    @email,
     @isPremium,
     @stripeCustomerId,
     @stripeSubscriptionId,
@@ -69,6 +71,7 @@ const insertUserStmt = db.prepare(`
     CURRENT_TIMESTAMP
   )
   ON CONFLICT(userId) DO UPDATE SET
+    email = COALESCE(excluded.email, users.email),
     isPremium = excluded.isPremium,
     stripeCustomerId = COALESCE(excluded.stripeCustomerId, users.stripeCustomerId),
     stripeSubscriptionId = COALESCE(excluded.stripeSubscriptionId, users.stripeSubscriptionId),
@@ -92,6 +95,7 @@ const getUserBySubscriptionIdStmt = db.prepare(`
 
 function upsertUser({
   userId,
+  email = null,
   isPremium = 0,
   stripeCustomerId = null,
   stripeSubscriptionId = null,
@@ -102,14 +106,15 @@ function upsertUser({
   if (!userId) return;
 
   insertUserStmt.run({
-    userId,
-    isPremium: isPremium ? 1 : 0,
-    stripeCustomerId,
-    stripeSubscriptionId,
-    subscriptionStatus,
-    currentPeriodEnd,
-    plan
-  });
+  userId,
+  email,
+  isPremium: isPremium ? 1 : 0,
+  stripeCustomerId,
+  stripeSubscriptionId,
+  subscriptionStatus,
+  currentPeriodEnd,
+  plan
+});
 }
 
 function getUserByUserId(userId) {
@@ -148,25 +153,27 @@ app.post("/stripe-webhook", express.raw({ type: "application/json" }), async (re
 
     switch (event.type) {
       case "checkout.session.completed": {
-        const session = event.data.object;
+  const session = event.data.object;
 
-        const userId = session.metadata?.userId || null;
-        const customerId = session.customer || null;
-        const subscriptionId = session.subscription || null;
+  const userId = session.metadata?.userId || null;
+  const customerId = session.customer || null;
+  const subscriptionId = session.subscription || null;
+  const email = session.customer_details?.email || session.customer_email || null;
 
-        if (userId) {
-          upsertUser({
-            userId,
-            isPremium: 1,
-            stripeCustomerId: customerId,
-            stripeSubscriptionId: subscriptionId,
-            subscriptionStatus: "active",
-            plan: "monthly"
-          });
-        }
+  if (userId) {
+    upsertUser({
+      userId,
+      email,
+      isPremium: 1,
+      stripeCustomerId: customerId,
+      stripeSubscriptionId: subscriptionId,
+      subscriptionStatus: "active",
+      plan: "monthly"
+    });
+  }
 
-        break;
-      }
+  break;
+}
 
       case "customer.subscription.created":
       case "customer.subscription.updated": {
@@ -1918,11 +1925,12 @@ app.post("/create-checkout-session", async (req, res) => {
     const safeUserId = userId || "anonymous";
 
     upsertUser({
-      userId: safeUserId,
-      isPremium: 0,
-      subscriptionStatus: "pending",
-      plan: "monthly"
-    });
+  userId: safeUserId,
+  email: email || null,
+  isPremium: 0,
+  subscriptionStatus: "pending",
+  plan: "monthly"
+});
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",

@@ -1451,7 +1451,7 @@
         const res = await fetch("/create-checkout-session", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId })
+          body: JSON.stringify({ userId, email: prompt("Enter your email to unlock Premium:") || "" })
         });
 
         const data = await res.json();
