@@ -2018,7 +2018,7 @@ app.get("/api/user-status/:userId", (req, res) => {
   }
 });
 
-app.post("/api/restore-premium", (req, res) => {
+app.post("/api/restore-premium", async (req, res) => {
   try {
     const { userId, email } = req.body || {};
     const normalizedEmail = String(email || "").trim().toLowerCase();
@@ -2031,7 +2031,58 @@ app.post("/api/restore-premium", (req, res) => {
       return res.status(400).json({ error: "Missing email" });
     }
 
-    const existingPremiumUser = getUserByEmail(normalizedEmail);
+    let existingPremiumUser = getUserByEmail(normalizedEmail);
+
+    // Hvis email ikke findes i vores DB endnu,
+    // så prøv at finde Stripe customer via email
+    if (!existingPremiumUser) {
+      const customers = await stripe.customers.list({
+        email: normalizedEmail,
+        limit: 1
+      });
+
+      const customer = customers.data?.[0] || null;
+
+      if (customer) {
+        existingPremiumUser = getUserByCustomerId(customer.id);
+
+        // Hvis customer findes i Stripe, men ikke i DB via email,
+        // så prøv at finde aktiv subscription direkte fra Stripe
+        if (!existingPremiumUser) {
+          const subscriptions = await stripe.subscriptions.list({
+            customer: customer.id,
+            status: "all",
+            limit: 10
+          });
+
+          const activeSub = subscriptions.data.find(
+            (sub) => sub.status === "active" || sub.status === "trialing"
+          );
+
+          if (activeSub) {
+            upsertUser({
+              userId,
+              email: normalizedEmail,
+              isPremium: 1,
+              stripeCustomerId: customer.id,
+              stripeSubscriptionId: activeSub.id,
+              subscriptionStatus: activeSub.cancel_at_period_end ? "canceling" : activeSub.status,
+              currentPeriodEnd: activeSub.current_period_end || null,
+              plan: "monthly"
+            });
+
+            return res.json({
+              success: true,
+              userId,
+              isPremium: true,
+              subscriptionStatus: activeSub.cancel_at_period_end ? "canceling" : activeSub.status,
+              currentPeriodEnd: activeSub.current_period_end || null,
+              plan: "monthly"
+            });
+          }
+        }
+      }
+    }
 
     if (!existingPremiumUser) {
       return res.status(404).json({ error: "No account found for that email" });
