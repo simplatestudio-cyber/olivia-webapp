@@ -1095,7 +1095,9 @@
     async function syncPremiumStatusFromBackend() {
       try {
         const userId = ensureUserId();
-        const res = await fetch(`/api/user-status/${encodeURIComponent(userId)}`);
+        const savedEmail = localStorage.getItem("olivia-email") || "";
+const query = savedEmail ? `?email=${encodeURIComponent(savedEmail)}` : "";
+const res = await fetch(`/api/user-status/${encodeURIComponent(userId)}${query}`);
         const data = await res.json();
 
         if (!res.ok) {
@@ -1443,76 +1445,82 @@
     }
 
     async function startCheckout() {
-      try {
-        unlockBtn.disabled = true;
-        unlockBtn.textContent = "Opening Olivia…";
+  try {
+    unlockBtn.disabled = true;
+    unlockBtn.textContent = "Opening Olivia…";
 
-        const userId = ensureUserId();
-        const res = await fetch("/create-checkout-session", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId, email: prompt("Enter your email to unlock Premium:") || "" })
-        });
+    const userId = ensureUserId();
+    const email = prompt("Enter your email to unlock Premium:") || "";
 
-        const data = await res.json();
-
-        if (!res.ok || !data.url) {
-          throw new Error(data.error || "Failed to create checkout session");
-        }
-
-        window.location.href = data.url;
-      } catch (err) {
-        console.error("Checkout error:", err);
-        unlockBtn.disabled = false;
-        unlockBtn.textContent = getDynamicPaywallContent().cta;
-        addMessage("assistant", "mm… something glitched for a sec 😅 try again?");
-      }
+    if (email) {
+      localStorage.setItem("olivia-email", email);
     }
 
-    async function openCustomerPortal() {
-      try {
-        manageSubscriptionBtn.disabled = true;
-        manageSubscriptionBtn.textContent = "Opening...";
+    const res = await fetch("/create-checkout-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, email })
+    });
 
-        const userId = ensureUserId();
-        const res = await fetch("/create-customer-portal-session", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId })
-        });
+    const data = await res.json();
 
-        const data = await res.json();
-
-        if (!res.ok || !data.url) {
-          throw new Error(data.error || "Failed to create customer portal session");
-        }
-
-        window.location.href = data.url;
-      } catch (err) {
-        console.error("Customer portal error:", err);
-        manageSubscriptionBtn.disabled = false;
-        manageSubscriptionBtn.textContent = "Manage Premium";
-        addMessage("assistant", "hey… i couldn’t open your subscription page right now 😅 try again?");
-      }
+    if (!res.ok || !data.url) {
+      throw new Error(data.error || "Failed to create checkout session");
     }
 
-    function attachPaywallPreviewInteractions() {
-      if (!lockedPreviewEl) return;
+    window.location.href = data.url;
+  } catch (err) {
+    console.error("Checkout error:", err);
+    unlockBtn.disabled = false;
+    unlockBtn.textContent = getDynamicPaywallContent().cta;
+    addMessage("assistant", "mm… something glitched for a sec 😅 try again?");
+  }
+}
 
-      const releasePreview = () => {
-        lockedPreviewEl.classList.remove("is-pressed");
-      };
+async function openCustomerPortal() {
+  try {
+    manageSubscriptionBtn.disabled = true;
+    manageSubscriptionBtn.textContent = "Opening...";
 
-      lockedPreviewEl.addEventListener("click", async () => {
-        await startCheckout();
-      });
+    const userId = ensureUserId();
+    const res = await fetch("/create-customer-portal-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId })
+    });
 
-      lockedPreviewEl.addEventListener("keydown", async (e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          await startCheckout();
-        }
-      });
+    const data = await res.json();
+
+    if (!res.ok || !data.url) {
+      throw new Error(data.error || "Failed to create customer portal session");
+    }
+
+    window.location.href = data.url;
+  } catch (err) {
+    console.error("Customer portal error:", err);
+    manageSubscriptionBtn.disabled = false;
+    manageSubscriptionBtn.textContent = "Manage Premium";
+    addMessage("assistant", "hey… i couldn’t open your subscription page right now 😅 try again?");
+  }
+}
+
+function attachPaywallPreviewInteractions() {
+  if (!lockedPreviewEl) return;
+
+  const releasePreview = () => {
+    lockedPreviewEl.classList.remove("is-pressed");
+  };
+
+  lockedPreviewEl.addEventListener("click", async () => {
+    await startCheckout();
+  });
+
+  lockedPreviewEl.addEventListener("keydown", async (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      await startCheckout();
+    }
+  });
 
       lockedPreviewEl.addEventListener("pointerdown", () => {
         lockedPreviewEl.classList.add("is-pressed");

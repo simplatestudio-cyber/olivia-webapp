@@ -85,6 +85,10 @@ const getUserByUserIdStmt = db.prepare(`
   SELECT * FROM users WHERE userId = ?
 `);
 
+const getUserByEmailStmt = db.prepare(`
+  SELECT * FROM users WHERE email = ?
+`);
+
 const getUserByCustomerIdStmt = db.prepare(`
   SELECT * FROM users WHERE stripeCustomerId = ?
 `);
@@ -1932,34 +1936,34 @@ app.post("/create-checkout-session", async (req, res) => {
   plan: "monthly"
 });
 
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      payment_method_types: ["card"],
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: "Olivia Premium",
-              description: "Unlock full access to Olivia 💖"
-            },
-            unit_amount: 999,
-            recurring: {
-              interval: "month"
-            }
-          },
-          quantity: 1
+const session = await stripe.checkout.sessions.create({
+  mode: "subscription",
+  payment_method_types: ["card"],
+  line_items: [
+    {
+      price_data: {
+        currency: "usd",
+        product_data: {
+          name: "Olivia Premium",
+          description: "Unlock full access to Olivia 💖"
+        },
+        unit_amount: 999,
+        recurring: {
+          interval: "month"
         }
-      ],
-      success_url: `${BASE_URL}/?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${BASE_URL}/`,
-      metadata: {
-        userId: safeUserId
       },
-      ...(email ? { customer_email: email } : {})
-    });
+      quantity: 1
+    }
+  ],
+  success_url: `${BASE_URL}/?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+  cancel_url: `${BASE_URL}/`,
+  metadata: {
+    userId: safeUserId
+  },
+  ...(email ? { customer_email: email } : {})
+});
 
-    res.json({ url: session.url });
+res.json({ url: session.url });
   } catch (err) {
     console.error("Stripe checkout error:", err);
     return res.status(500).json({ error: "Unable to create checkout session" });
@@ -1980,7 +1984,11 @@ app.get("/api/user-status/:userId", (req, res) => {
       });
     }
 
-    const user = getUserByUserId(userId);
+    let user = getUserByUserId(userId);
+
+    if (!user && req.query.email) {
+      user = getUserByEmailStmt.get(req.query.email);
+    }
 
     if (!user) {
       return res.json({
