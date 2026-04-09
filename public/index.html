@@ -1096,7 +1096,7 @@
 async function syncPremiumStatusFromBackend() {
   try {
     const userId = ensureUserId();
-    const savedEmail = "fkingonielsen@gmail.con";
+    const savedEmail = localStorage.getItem(EMAIL_KEY) || "";
 
     // 🔥 Prøv at restore premium først (hvis email findes)
     if (savedEmail) {
