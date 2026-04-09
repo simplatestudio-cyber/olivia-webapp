@@ -29,6 +29,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     userId TEXT UNIQUE NOT NULL,
+    email TEXT,
     isPremium INTEGER DEFAULT 0,
     stripeCustomerId TEXT,
     stripeSubscriptionId TEXT,
@@ -39,7 +40,13 @@ db.exec(`
     updatedAt TEXT DEFAULT CURRENT_TIMESTAMP
   )
 `);
-
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN email TEXT`);
+} catch (err) {
+  if (!String(err.message).includes("duplicate column name")) {
+    throw err;
+  }
+}
 const insertUserStmt = db.prepare(`
   INSERT INTO users (
     userId,
