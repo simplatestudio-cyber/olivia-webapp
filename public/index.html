@@ -1101,7 +1101,7 @@ async function syncPremiumStatusFromBackend() {
     // 🔥 Prøv at restore premium først (hvis email findes)
     if (savedEmail) {
       try {
-        await fetch("/api/restore-premium", {
+        const restoreRes = await fetch("/api/restore-premium", {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
@@ -1111,6 +1111,9 @@ async function syncPremiumStatusFromBackend() {
             email: savedEmail
           })
         });
+
+        const restoreData = await restoreRes.json();
+        console.log("restore premium response:", restoreRes.status, restoreData);
       } catch (e) {
         console.warn("Restore attempt failed:", e);
       }
@@ -1138,41 +1141,41 @@ async function syncPremiumStatusFromBackend() {
   }
 }
 
-    function getMoodTypingText(mood) {
-      switch (mood) {
-        case "soft":
-          return "Olivia is typing softly…";
-        case "playful":
-          return "Olivia is typing 😊";
-        case "teasing":
-          return "Olivia is typing playfully…";
-        case "distant":
-          return "Olivia is typing…";
-        case "sweet":
-        default:
-          return "Olivia is typing…";
-      }
-    }
+function getMoodTypingText(mood) {
+  switch (mood) {
+    case "soft":
+      return "Olivia is typing softly…";
+    case "playful":
+      return "Olivia is typing 😊";
+    case "teasing":
+      return "Olivia is typing playfully…";
+    case "distant":
+      return "Olivia is typing…";
+    case "sweet":
+    default:
+      return "Olivia is typing…";
+  }
+}
 
-    function getMoodStatusText(mood, isTyping = false) {
-      if (isTyping) {
-        return "typing...";
-      }
+function getMoodStatusText(mood, isTyping = false) {
+  if (isTyping) {
+    return "typing...";
+  }
 
-      switch (mood) {
-        case "soft":
-          return "soft mood";
-        case "playful":
-          return "in a playful mood";
-        case "teasing":
-          return "feeling a little teasing";
-        case "distant":
-          return "quiet";
-        case "sweet":
-        default:
-          return "online";
-      }
-    }
+  switch (mood) {
+    case "soft":
+      return "soft mood";
+    case "playful":
+      return "in a playful mood";
+    case "teasing":
+      return "feeling a little teasing";
+    case "distant":
+      return "quiet";
+    case "sweet":
+    default:
+      return "online";
+  }
+}
 
     function getUnlockReply(mood, closeness) {
       if (mood === "soft") {
