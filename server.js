@@ -126,6 +126,11 @@ function getUserByUserId(userId) {
   return getUserByUserIdStmt.get(userId) || null;
 }
 
+function getUserByEmail(email) {
+  if (!email) return null;
+  return getUserByEmailStmt.get(String(email).trim().toLowerCase()) || null;
+}
+
 function getUserByCustomerId(customerId) {
   if (!customerId) return null;
   return getUserByCustomerIdStmt.get(customerId) || null;
@@ -1987,7 +1992,7 @@ app.get("/api/user-status/:userId", (req, res) => {
     let user = getUserByUserId(userId);
 
     if (!user && req.query.email) {
-      user = getUserByEmailStmt.get(req.query.email);
+      user = getUserByEmail(req.query.email);
     }
 
     if (!user) {
@@ -2010,6 +2015,54 @@ app.get("/api/user-status/:userId", (req, res) => {
   } catch (err) {
     console.error("User status error:", err);
     return res.status(500).json({ error: "Unable to fetch user status" });
+  }
+});
+
+app.post("/api/restore-premium", (req, res) => {
+  try {
+    const { userId, email } = req.body || {};
+    const normalizedEmail = String(email || "").trim().toLowerCase();
+
+    if (!userId) {
+      return res.status(400).json({ error: "Missing userId" });
+    }
+
+    if (!normalizedEmail) {
+      return res.status(400).json({ error: "Missing email" });
+    }
+
+    const existingPremiumUser = getUserByEmail(normalizedEmail);
+
+    if (!existingPremiumUser) {
+      return res.status(404).json({ error: "No account found for that email" });
+    }
+
+    if (!existingPremiumUser.isPremium) {
+      return res.status(400).json({ error: "No active premium found for that email" });
+    }
+
+    upsertUser({
+      userId,
+      email: normalizedEmail,
+      isPremium: existingPremiumUser.isPremium,
+      stripeCustomerId: existingPremiumUser.stripeCustomerId,
+      stripeSubscriptionId: existingPremiumUser.stripeSubscriptionId,
+      subscriptionStatus: existingPremiumUser.subscriptionStatus || "active",
+      currentPeriodEnd: existingPremiumUser.currentPeriodEnd || null,
+      plan: existingPremiumUser.plan || "monthly"
+    });
+
+    return res.json({
+      success: true,
+      userId,
+      isPremium: true,
+      subscriptionStatus: existingPremiumUser.subscriptionStatus || "active",
+      currentPeriodEnd: existingPremiumUser.currentPeriodEnd || null,
+      plan: existingPremiumUser.plan || "monthly"
+    });
+  } catch (err) {
+    console.error("Restore premium error:", err);
+    return res.status(500).json({ error: "Unable to restore premium" });
   }
 });
 

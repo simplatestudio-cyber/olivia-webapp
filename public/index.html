@@ -776,6 +776,7 @@
     const STORAGE_KEY = "olivia-mvp-state-v2";
     const PREMIUM_KEY = "olivia-premium";
     const USER_ID_KEY = "olivia-user-id";
+    const EMAIL_KEY = "olivia-email";
     const DEFAULT_PAYWALL_PREVIEW = "/images/olivia-16.png";
 
     const chatEl = document.getElementById("chat");
@@ -1089,32 +1090,53 @@
     }
 
     function clearSavedState() {
-      localStorage.removeItem(STORAGE_KEY);
-    }
+  localStorage.removeItem(STORAGE_KEY);
+}
 
-    async function syncPremiumStatusFromBackend() {
+async function syncPremiumStatusFromBackend() {
+  try {
+    const userId = ensureUserId();
+    const savedEmail = localStorage.getItem(EMAIL_KEY) || "";
+
+    // 🔥 Prøv at restore premium først (hvis email findes)
+    if (savedEmail) {
       try {
-        const userId = ensureUserId();
-        const savedEmail = localStorage.getItem("olivia-email") || "";
-const query = savedEmail ? `?email=${encodeURIComponent(savedEmail)}` : "";
-const res = await fetch(`/api/user-status/${encodeURIComponent(userId)}${query}`);
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.error || "Failed to fetch user status");
-        }
-
-        state.paid = Boolean(data.isPremium);
-        state.subscriptionStatus = data.subscriptionStatus || "inactive";
-        state.currentPeriodEnd = data.currentPeriodEnd || null;
-        setPremiumFlag(state.paid);
-        updateMeta();
-        refreshStatus();
-        saveState();
-      } catch (err) {
-        console.error("Premium sync error:", err);
+        await fetch("/api/restore-premium", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            userId,
+            email: savedEmail
+          })
+        });
+      } catch (e) {
+        console.warn("Restore attempt failed:", e);
       }
     }
+
+    // 🔄 Hent derefter status
+    const res = await fetch(`/api/user-status/${encodeURIComponent(userId)}`);
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || "Failed to fetch user status");
+    }
+
+    state.paid = Boolean(data.isPremium);
+    state.subscriptionStatus = data.subscriptionStatus || "inactive";
+    state.currentPeriodEnd = data.currentPeriodEnd || null;
+
+    setPremiumFlag(state.paid);
+    updateMeta();
+    refreshStatus();
+    saveState();
+
+  } catch (err) {
+    console.error("Premium sync error:", err);
+  }
+}
 
     function getMoodTypingText(mood) {
       switch (mood) {
