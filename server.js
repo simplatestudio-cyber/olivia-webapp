@@ -2023,6 +2023,8 @@ app.post("/api/restore-premium", async (req, res) => {
     const { userId, email } = req.body || {};
     const normalizedEmail = String(email || "").trim().toLowerCase();
 
+    console.log("RESTORE ATTEMPT:", { userId, normalizedEmail });
+
     if (!userId) {
       return res.status(400).json({ error: "Missing userId" });
     }
@@ -2032,6 +2034,7 @@ app.post("/api/restore-premium", async (req, res) => {
     }
 
     let existingPremiumUser = getUserByEmail(normalizedEmail);
+    console.log("DB USER BY EMAIL:", existingPremiumUser);
 
     // Hvis email ikke findes i vores DB endnu,
     // så prøv at finde Stripe customer via email
@@ -2042,9 +2045,11 @@ app.post("/api/restore-premium", async (req, res) => {
       });
 
       const customer = customers.data?.[0] || null;
+      console.log("STRIPE CUSTOMER BY EMAIL:", customer?.id || null);
 
       if (customer) {
         existingPremiumUser = getUserByCustomerId(customer.id);
+        console.log("DB USER BY CUSTOMER ID:", existingPremiumUser);
 
         // Hvis customer findes i Stripe, men ikke i DB via email,
         // så prøv at finde aktiv subscription direkte fra Stripe
@@ -2057,6 +2062,17 @@ app.post("/api/restore-premium", async (req, res) => {
 
           const activeSub = subscriptions.data.find(
             (sub) => sub.status === "active" || sub.status === "trialing"
+          );
+
+          console.log(
+            "ACTIVE SUB FOUND:",
+            activeSub
+              ? {
+                  id: activeSub.id,
+                  status: activeSub.status,
+                  current_period_end: activeSub.current_period_end
+                }
+              : null
           );
 
           if (activeSub) {
